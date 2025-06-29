@@ -1,0 +1,57 @@
+# 编译输出
+/build/
+*.elf
+*.bin
+*.hex
+*.map
+*.img
+*.log
+
+# CMake 生成的文件
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Ninja 生成的文件
+*.ninja
+.ninja_log
+.ninja_deps
+rules.ninja
+
+# 项目配置缓存（如果你不想保存 sdkconfig.defaults 之外的配置）
+sdkconfig
+sdkconfig.old
+sdkconfig.ci
+dependencies.lock
+
+# VSCode 文件
+.vscode/
+.vscode/*.code-workspace
+.devcontainer/
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ESP-IDF 依赖下载缓存
+*.d
+*.o
+*.a
+
+# ESP-IDF 仓库子模块
+/managed_components/*
+
+# Windows 下的缩略图数据库和系统文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+# 自定义忽略（按需添加）
+# /tools/
+# /scripts/
