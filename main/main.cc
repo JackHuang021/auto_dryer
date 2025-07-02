@@ -27,6 +27,7 @@
 #include "button_gpio.h"
 #include "lvgl.h"
 #include "bsp_lcd.h"
+#include "ui.h"
 
 static i2c_master_bus_handle_t i2c_bus_handle = NULL;
 
@@ -180,7 +181,11 @@ extern "C" void app_main(void)
     buz.Init(BEEP_GPIO);
     buz.Beep({.frequency = 1000, .duration_ms = 1000, .volume = 0.01f});
     vTaskDelay(pdMS_TO_TICKS(1000));
-    buz.Play({{800, 200, 0.01f}, {500, 200, 0.01f}}); 
+    buz.Play({{800, 200, 0.01f}, {500, 200, 0.01f}});
+
+    HeaterUI ui;
+    ui.init();
+    ui.update(31, 45, 9, 52);
 
     while (1) {
         vTaskDelay(2000 / portTICK_PERIOD_MS);
