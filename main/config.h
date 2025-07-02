@@ -27,12 +27,12 @@
 #define EC11_B_GPIO     (GPIO_NUM_21)
 
 /* LCD pins */
-#define LCD_GPIO_SCLK       (GPIO_NUM_7)
-#define LCD_GPIO_MOSI       (GPIO_NUM_5)
-#define LCD_GPIO_RST        (-1)
-#define LCD_GPIO_DC         (GPIO_NUM_4)
-#define LCD_GPIO_CS         (GPIO_NUM_6)
-#define LCD_GPIO_BL         (GPIO_NUM_3)
+#define LCD_GPIO_SCLK       (GPIO_NUM_5)
+#define LCD_GPIO_MOSI       (GPIO_NUM_6)
+#define LCD_GPIO_RST        (GPIO_NUM_2)
+#define LCD_GPIO_DC         (GPIO_NUM_7)
+#define LCD_GPIO_CS         (GPIO_NUM_NC)
+#define LCD_GPIO_BL         (GPIO_NUM_8)
 
 /* LCD settings */
 #define LCD_SPI_NUM             (SPI2_HOST)
@@ -42,7 +42,7 @@
 #define LCD_COLOR_SPACE         (ESP_LCD_COLOR_SPACE_BGR)
 #define LCD_BITS_PER_PIXEL      (16)
 #define LCD_DRAW_BUFF_DOUBLE    (1)
-#define LCD_DRAW_BUFF_HEIGHT    (320)
+#define LCD_DRAW_BUFF_HEIGHT    (40)
 #define LCD_BL_ON_LEVEL         (1)
 #define LCD_WIDTH               (240)
 #define LCD_HEIGHT              (240)

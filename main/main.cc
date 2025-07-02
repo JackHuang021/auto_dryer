@@ -54,7 +54,7 @@ static void lv_indev_read_cb(lv_indev_t * indev, lv_indev_data_t * data)
 static esp_err_t lvgl_indev_init(void)
 {
     esp_err_t ret = ESP_OK;
-    // lv_indev = lv_
+
     lv_indev = lv_indev_create();
     ESP_RETURN_ON_FALSE(lv_indev, ESP_ERR_NO_MEM, TAG, "not enough memory for lv_indev_t");
     lv_indev_set_type(lv_indev, LV_INDEV_TYPE_ENCODER);
