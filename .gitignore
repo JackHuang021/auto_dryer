@@ -6,6 +6,7 @@
 *.map
 *.img
 *.log
+.clangd
 
 # CMake 生成的文件
 CMakeFiles/

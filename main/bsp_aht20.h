@@ -15,6 +15,11 @@
 #include <driver/i2c_master.h>
 #include "aht20.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 class Aht20 {
 private:
     i2c_master_bus_handle_t i2c_bus_handle;
@@ -35,3 +40,8 @@ protected:
 };
 
 #endif // I2C_DEVICE_H
+
+
+#ifdef __cplusplus
+}
+#endif
