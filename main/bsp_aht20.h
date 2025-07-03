@@ -22,15 +22,14 @@ extern "C" {
 
 class Aht20 {
 private:
-    i2c_master_bus_handle_t i2c_bus_handle;
-    aht20_dev_handle_t aht20_handle;
-    uint8_t dev_addr;
-    int16_t humi;
-    int16_t temp;
+    i2c_master_bus_handle_t i2c_bus_handle = NULL;
+    aht20_dev_handle_t aht20_handle = NULL;
+    uint8_t dev_addr = 0;
+    int16_t humi = 0;
+    int16_t temp = 0;
 
 public:
-    Aht20(i2c_master_bus_handle_t i2c_bus, uint8_t addr);
-    esp_err_t init(void);
+    esp_err_t init(i2c_master_bus_handle_t i2c_bus, uint8_t addr);
     esp_err_t update(void);
     void print(void);
     int16_t get_humi(void);

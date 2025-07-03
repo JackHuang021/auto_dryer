@@ -18,17 +18,14 @@
 
 static const char *TAG = "aht20";
 
-Aht20::Aht20(i2c_master_bus_handle_t i2c_bus, uint8_t addr) {
-    this->i2c_bus_handle = i2c_bus;
-    this->dev_addr = addr;
-    temp = 0;
-    humi = 0;
-}
-
-esp_err_t Aht20::init(void)
+esp_err_t Aht20::init(i2c_master_bus_handle_t i2c_bus, uint8_t addr)
 {
     esp_err_t ret = ESP_OK;
-    i2c_aht20_config_t aht20_i2c_config;
+
+    this->i2c_bus_handle = i2c_bus;
+    this->dev_addr = addr;
+
+    i2c_aht20_config_t aht20_i2c_config = {};
     aht20_i2c_config.i2c_config.device_address = this->dev_addr;
     aht20_i2c_config.i2c_config.scl_speed_hz = DEFAULT_I2C_CLOCK;
     aht20_i2c_config.i2c_timeout = 1000;

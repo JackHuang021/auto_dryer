@@ -39,7 +39,7 @@
 #define LCD_PIXEL_CLK_HZ        (40 * 1000 * 1000)
 #define LCD_CMD_BITS            (8)
 #define LCD_PARAM_BITS          (8)
-#define LCD_COLOR_SPACE         (ESP_LCD_COLOR_SPACE_BGR)
+#define LCD_COLOR_SPACE         (ESP_LCD_COLOR_SPACE_RGB)
 #define LCD_BITS_PER_PIXEL      (16)
 #define LCD_DRAW_BUFF_DOUBLE    (1)
 #define LCD_DRAW_BUFF_HEIGHT    (40)
@@ -50,5 +50,12 @@
 #define EC11_BTN_ACTIVE_LEVEL   (0)
 
 #define DEFAULT_I2C_CLOCK       (100000)
+
+/* header parameters */
+#define MIN_HEAT_TEMP           (40)
+#define MAX_HEAT_TEMP           (60)
+
+#define MIN_HEAT_TIME_MINS      (10)
+#define MAX_HEAT_TIME_MINS      (600)
 
 #endif
