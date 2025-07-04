@@ -52,6 +52,8 @@ esp_err_t PWM::setupPWM(ledc_timer_t timer_num, uint32_t freq_hz,
     ret = ledc_channel_config(&channel_config);
     ESP_RETURN_ON_ERROR(ret, TAG, "ledc channel config failed");
 
+    ESP_LOGI(TAG, "pwm init done");
+
     return ret;
 }
 

@@ -9,8 +9,7 @@
  * 
  */
 
-#ifndef __BSP_AHT20_H_
-#define __BSP_AHT20_H_
+#pragma once
 
 #include <driver/i2c_master.h>
 #include "aht20.h"
@@ -37,9 +36,6 @@ public:
 
 protected:
 };
-
-#endif // I2C_DEVICE_H
-
 
 #ifdef __cplusplus
 }

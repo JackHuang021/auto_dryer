@@ -18,9 +18,9 @@
 extern "C" {
 #endif
 
-class HeaterUI {
+class DryerUI {
 public:
-    HeaterUI();
+    DryerUI();
     void init();
     void update(float temp, int16_t humi);
     void bind_indev(lv_indev_t *indev);

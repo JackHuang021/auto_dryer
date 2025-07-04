@@ -124,6 +124,8 @@ esp_err_t lcd_init(void)
     ret = gpio_set_level(LCD_GPIO_BL, LCD_BL_ON_LEVEL);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "failed to turn backlight on");
 
+    ESP_LOGI(TAG, "lcd init done");
+
     return ret;
 
 err:
@@ -172,6 +174,9 @@ esp_err_t lvgl_init(void)
 #endif
 
     lvgl_disp = lvgl_port_add_disp(&display_config);
+    ESP_RETURN_ON_FALSE(lvgl_disp != NULL, ESP_ERR_NO_MEM, TAG, "lvgl failed to add display");
+
+    ESP_LOGI(TAG, "lvgl init done");
 
     return ret;
 }

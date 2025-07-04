@@ -24,13 +24,13 @@ LV_FONT_DECLARE(font_awesome);
 
 static const char TAG[] = "UI";
 
-HeaterUI::HeaterUI() {
+DryerUI::DryerUI() {
     // 构造函数可留空
 }
 
-void HeaterUI::slider_event_cb(lv_event_t *e)
+void DryerUI::slider_event_cb(lv_event_t *e)
 {
-    HeaterUI *ui = reinterpret_cast<HeaterUI *>(lv_event_get_user_data(e));
+    DryerUI *ui = reinterpret_cast<DryerUI *>(lv_event_get_user_data(e));
     lv_obj_t *slider = (lv_obj_t *)lv_event_get_target(e);
     int raw_value = lv_slider_get_value(slider);
 
@@ -58,7 +58,7 @@ void HeaterUI::slider_event_cb(lv_event_t *e)
     }
 }
 
-void HeaterUI::init() {
+void DryerUI::init() {
     int y_pos = 0;
     lv_obj_t *scr = lv_scr_act();
 
@@ -147,16 +147,18 @@ void HeaterUI::init() {
     lv_group_add_obj(group, slider_duration);
 
     lvgl_port_unlock();
+
+    ESP_LOGI(TAG, "ui init done");
 }
 
-void HeaterUI::bind_indev(lv_indev_t *indev)
+void DryerUI::bind_indev(lv_indev_t *indev)
 {
     lvgl_port_lock(0);
     lv_indev_set_group(indev, group);
     lvgl_port_unlock();
 }
 
-void HeaterUI::update(float temp, int16_t humi)
+void DryerUI::update(float temp, int16_t humi)
 {
     char buf[16] = {0};
 
