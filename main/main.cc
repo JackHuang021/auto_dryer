@@ -31,6 +31,7 @@
 #include "ui.h"
 #include "bsp_pwm.h"
 #include "dryer.h"
+#include "smartconfig.h"
 
 static const char *TAG = "main";
 
@@ -51,5 +52,6 @@ extern "C" void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
+    init_wifi();
     dryer.init();
 }
