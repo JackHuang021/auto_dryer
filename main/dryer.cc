@@ -24,14 +24,15 @@ i2c_master_bus_handle_t Dryer::i2c_bus_handle_ = NULL;
 button_handle_t Dryer::btn_handle_ = NULL;
 knob_handle_t Dryer::knob_handle_ = NULL;
 lv_indev_t * Dryer::indev_ = NULL;
-TaskHandle_t * Dryer::main_task_ = NULL;
-TaskHandle_t * Dryer::ui_task_ = NULL;
+TaskHandle_t Dryer::main_task_ = NULL;
+TaskHandle_t Dryer::ui_task_ = NULL;
 bool Dryer::inited_ = false;
 bool Dryer::running_ = false;
 Buzzer Dryer::buz_;
 DryerUI Dryer::ui_;
 PWM Dryer::ptc_pwm_;
 Aht20 Dryer::aht20_;
+static bool btn_state = false;
 
 static esp_err_t i2c_init(void)
 {
@@ -62,12 +63,17 @@ static esp_err_t i2c_init(void)
 static void button_press_down_cb(void *arg, void *data)
 {
     ESP_LOGI(TAG, "BTN: BUTTON_PRESS_UP");
-    Dryer::buz_.Beep( {1000, 200, 0.1f} );
+    if (iot_button_get_ticks_time(Dryer::btn_handle_) <
+            CONFIG_BUTTON_LONG_PRESS_TIME_MS) {
+        btn_state = true;
+        Dryer::buz_.Beep( {1000, 200, 0.1f} );
+    }
 }
 
 static void button_long_press_cb(void *arg, void *data)
 {
     ESP_LOGI(TAG, "BTN: BUTTON_LONG_PRESS_START");
+    Dryer::running_ = !Dryer::running_;
     Dryer::buz_.Beep( {800, 500, 0.1f} );
 }
 
@@ -142,15 +148,10 @@ static void lv_indev_read_cb(lv_indev_t * indev, lv_indev_data_t * data)
         iot_knob_clear_count_value(Dryer::knob_handle_);
         data->state = LV_INDEV_STATE_RELEASED;
     } else {
-        bool btn_press_state = false;
-        /* ignore long press event */
-        if (BUTTON_PRESS_UP == iot_button_get_event(Dryer::btn_handle_) &&
-            iot_button_get_ticks_time(Dryer::btn_handle_) < BUTTON_LONG_PRESS_TIME_MS)
-            btn_press_state = true;
-        
-        data->state = btn_press_state ?
+        data->state = btn_state ?
                     LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
         data->enc_diff = 0;
+        btn_state = false;
         iot_knob_clear_count_value(Dryer::knob_handle_);
     }
 }
@@ -175,8 +176,8 @@ static void ui_update_task(void *args)
     Dryer *dryer = static_cast<Dryer *>(args);
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(500));
         Dryer::ui_.update(dryer->temp_, dryer->humi_);
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
@@ -185,9 +186,7 @@ static void main_update_task(void *args)
     Dryer *dryer = static_cast<Dryer *>(args);
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(200));
         Dryer::aht20_.update();
-        Dryer::aht20_.print();
         dryer->temp_ = static_cast<float>(Dryer::aht20_.get_temp()) / 100;
         dryer->humi_ = Dryer::aht20_.get_humi() / 100;
 
@@ -195,6 +194,9 @@ static void main_update_task(void *args)
             Dryer::ptc_pwm_.setDuty(0);
             continue;
         }
+
+        if (Dryer::running_)
+            Dryer::ptc_pwm_.setDuty(100);
     }
 }
 
@@ -226,15 +228,15 @@ esp_err_t Dryer::init(void)
     Dryer::inited_ = true;
 
     BaseType_t res = pdPASS;
-    res = xTaskCreate(ui_update_task, "ui_task", 2048, this,
-                      configMAX_PRIORITIES - 3, Dryer::ui_task_);
+    res = xTaskCreate(ui_update_task, "ui_task", 4096, this,
+                      configMAX_PRIORITIES - 3, &Dryer::ui_task_);
     if (pdPASS != res) {
         ESP_LOGE(TAG, "failed to create ui task");
         ret = ESP_FAIL;
     }
 
     res = xTaskCreate(main_update_task, "main_task", 2048, this,
-                      configMAX_PRIORITIES - 2, Dryer::main_task_);
+                      configMAX_PRIORITIES - 2, &Dryer::main_task_);
     if (pdPASS != res) {
     ESP_LOGE(TAG, "failed to create main task");
     ret = ESP_FAIL;

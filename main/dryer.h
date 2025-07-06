@@ -41,8 +41,8 @@ public:
     static lv_indev_t *indev_;
     static bool inited_;
     static bool running_;
-    static TaskHandle_t *main_task_;
-    static TaskHandle_t *ui_task_;
+    static TaskHandle_t main_task_;
+    static TaskHandle_t ui_task_;
 
 public:
     float temp_ = 0;
