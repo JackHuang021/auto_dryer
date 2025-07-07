@@ -158,9 +158,9 @@ static void smartconfig_task(void *param)
 
     while (1) {
         if (startup) {
-            ESP_LOGI(tag, "wait 10S to connect wifi");
+            ESP_LOGI(tag, "wait 20S to connect wifi");
             bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
-                                            pdFALSE, pdFALSE, pdMS_TO_TICKS(10000));
+                                            pdFALSE, pdFALSE, pdMS_TO_TICKS(20000));
             if (!(bits & CONNECTED_BIT))
                 smartconfig_run = true;
             startup = false;
@@ -204,6 +204,9 @@ void init_wifi(void)
     esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL);
     esp_wifi_set_mode(WIFI_MODE_STA);
     esp_wifi_start();
+    esp_err_t ret = esp_wifi_set_inactive_time(WIFI_IF_STA, 30);
+    if (ESP_OK != ret)
+        ESP_LOGI(tag, "esp_wifi_set_inactive_time failed");
 
     if (read_wifi_credentials(ssid, password)) {
         wifi_config_t config;
