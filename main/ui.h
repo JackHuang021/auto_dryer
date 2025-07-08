@@ -19,29 +19,39 @@ extern "C" {
 #endif
 
 class DryerUI {
-public:
-    DryerUI();
-    void init();
-    void update(float temp, int16_t humi);
-    void bind_indev(lv_indev_t *indev);
-
-    int get_target_temp() const { return target_temp; }
-    int get_duration() const { return duration; }
-
 private:
-    lv_obj_t *label_time;
-    lv_obj_t *label_temp;
-    lv_obj_t *label_humi;
-    lv_obj_t *label_target_value;
-    lv_obj_t *label_duration_value;
-    lv_obj_t *slider_target;
-    lv_obj_t *slider_duration;
-    lv_group_t *group;
+    lv_obj_t *label_sensors_ = NULL;
+    lv_obj_t *label_wifi_ = NULL;
+    lv_obj_t *label_sntp_ = NULL;
+
+    lv_obj_t *label_time_ = NULL;
+    lv_obj_t *label_temp_ = NULL;
+    lv_obj_t *label_humi_ = NULL;
+    lv_obj_t *label_target_value_ = NULL;
+    lv_obj_t *label_duration_value_ = NULL;
+    lv_obj_t *slider_target_ = NULL;
+    lv_obj_t *slider_duration_ = NULL;
+    lv_group_t *indev_group_ = NULL;
 
     int target_temp = 40;
     int duration = 10;
 
+private:
     static void slider_event_cb(lv_event_t *e);
+
+public:
+    DryerUI();
+    void start_page();
+    void main_page();
+    void update(float temp, int16_t humi);
+    void bind_indev(lv_indev_t *indev);
+    void update_label_wifi(const char *text);
+    void update_label_sensors(const char *text);
+    void update_label_sntp(const char *text);
+
+
+    int get_target_temp() const { return target_temp; }
+    int get_duration() const { return duration; }
 };
 
 #ifdef __cplusplus

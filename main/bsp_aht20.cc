@@ -32,7 +32,8 @@ esp_err_t Aht20::init(i2c_master_bus_handle_t i2c_bus, uint8_t addr)
 
     ret = aht20_new_sensor(this->i2c_bus_handle,
                            &aht20_i2c_config, &aht20_handle);
-    ESP_RETURN_ON_ERROR(ret, TAG, "failed to init aht20");
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to init aht20: %s",
+                        esp_err_to_name(ret));
 
     ESP_LOGI(TAG, "aht20 init done.");
 

@@ -32,10 +32,12 @@
 #include "bsp_pwm.h"
 #include "dryer.h"
 #include "smartconfig.h"
+#include "sntp.h"
 
 static const char *TAG = "main";
 
 static Dryer dryer;
+static SyncTime synctime;
 
 extern "C" void app_main(void)
 {
@@ -54,4 +56,5 @@ extern "C" void app_main(void)
 
     init_wifi();
     dryer.init();
+    synctime.get_local_time();
 }

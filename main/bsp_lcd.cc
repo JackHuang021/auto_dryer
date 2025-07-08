@@ -78,7 +78,8 @@ esp_err_t lcd_init(void)
     bk_gpio_config.mode = GPIO_MODE_OUTPUT;
 
     ret = gpio_config(&bk_gpio_config);
-    ESP_RETURN_ON_ERROR(ret, TAG, "lcd backlight gpio config failed");
+    ESP_RETURN_ON_ERROR(ret, TAG, "lcd backlight gpio config failed: %s",
+                        esp_err_to_name(ret));
 
     /* lcd init */
     spi_bus_config_t spi_bus_config = { };
@@ -91,7 +92,8 @@ esp_err_t lcd_init(void)
             LCD_WIDTH * LCD_DRAW_BUFF_HEIGHT * sizeof(uint16_t);
 
     ret = spi_bus_initialize(LCD_SPI_NUM, &spi_bus_config, SPI_DMA_CH_AUTO);
-    ESP_RETURN_ON_ERROR(ret, TAG, "spi bus init failed");
+    ESP_RETURN_ON_ERROR(ret, TAG, "spi bus init failed: %s",
+                        esp_err_to_name(ret));
 
     esp_lcd_panel_io_spi_config_t panel_io_config = { };
     panel_io_config.cs_gpio_num = LCD_GPIO_CS;
@@ -108,21 +110,24 @@ esp_err_t lcd_init(void)
     panel_config.bits_per_pixel = LCD_BITS_PER_PIXEL;
     ret = esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_SPI_NUM,
                                    &panel_io_config, &panel_io_handle);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "create lcd panel io failed");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "create lcd panel io failed: %s",
+                      esp_err_to_name(ret));
 
     ret = esp_lcd_new_panel_st7789(panel_io_handle, &panel_config, &panel_handle);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "create st7789 lcd panel failed");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "create st7789 lcd panel failed: %s",
+                      esp_err_to_name(ret));
 
     ret = esp_lcd_panel_reset(panel_handle);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "faile to reset lcd");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "faile to reset lcd: %s",
+                      esp_err_to_name(ret));
     lcd_cmd_init();
     // esp_lcd_panel_mirror(panel_handle, false, false);
     ret = esp_lcd_panel_disp_on_off(panel_handle, true);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "failed to set lcd on");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "failed to set lcd on: %s",
+                      esp_err_to_name(ret));
 
     /* turn backlight on */
-    ret = gpio_set_level(LCD_GPIO_BL, LCD_BL_ON_LEVEL);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "failed to turn backlight on");
+    gpio_set_level(LCD_GPIO_BL, LCD_BL_ON_LEVEL);
 
     ESP_LOGI(TAG, "lcd init done");
 
@@ -152,7 +157,8 @@ esp_err_t lvgl_init(void)
     lvgl_config.timer_period_ms = 5;
 
     ret = lvgl_port_init(&lvgl_config);
-    ESP_RETURN_ON_ERROR(ret, TAG, "lvgl port init failed");
+    ESP_RETURN_ON_ERROR(ret, TAG, "lvgl port init failed: %s",
+                        esp_err_to_name(ret));
 
     lvgl_port_display_cfg_t display_config = { };
     display_config.io_handle = panel_io_handle;

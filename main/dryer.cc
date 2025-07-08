@@ -53,7 +53,8 @@ static esp_err_t i2c_init(void)
     };
 
     ret = i2c_new_master_bus(&i2c_bus_config, &Dryer::i2c_bus_handle_);
-    ESP_RETURN_ON_ERROR(ret, TAG, "failed to init i2c bus");
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to init i2c bus: %s",
+                        esp_err_to_name(ret));
 
     ESP_LOGI(TAG, "i2c bus init done.");
 
@@ -204,19 +205,27 @@ esp_err_t Dryer::init(void)
 {
     esp_err_t ret = ESP_OK;
 
-    i2c_init();
-    aht20_.init(i2c_bus_handle_, AHT20_ADDRESS_0);
+    /* init i2c bus & aht20 */
+    ret = i2c_init();
+    ret = aht20_.init(i2c_bus_handle_, AHT20_ADDRESS_0);
 
-    Dryer::buz_.Init(BEEP_GPIO);
+    /* init beep */
+    ret = Dryer::buz_.Init(BEEP_GPIO);
 
-    lcd_init();
-    lvgl_init();
+    /* init spi lcd & lvgl */
+    ret = lcd_init();
+    ret = lvgl_init();
+    ui_.start_page();
 
-    ec11_init();
-    lvgl_indev_init();
+    /* init ec11 */
+    ret = ec11_init();
+    ret = lvgl_indev_init();
 
-    Dryer::ui_.init();
-    Dryer::ui_.bind_indev(Dryer::indev_);
+    if (ESP_OK == ret)
+        Dryer::ui_.update_label_sensors(LV_SYMBOL_LIST "init sensors ok...");
+    else
+        Dryer::ui_.update_label_sensors(LV_SYMBOL_CLOSE "init sensors failed...");
+
 
     Dryer::ptc_pwm_.setupPWM(LEDC_TIMER_1, 200, LEDC_TIMER_13_BIT,
                              LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1,

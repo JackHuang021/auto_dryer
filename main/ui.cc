@@ -9,6 +9,9 @@
  * 
  */
 
+#include <stdio.h>
+#include <assert.h>
+
 #include "bsp_lcd.h"
 #include "ui.h"
 #include "esp_lvgl_port.h"
@@ -16,17 +19,16 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_err.h"
+#include "esp_macros.h"
 
 #include "lvgl.h"
-#include <stdio.h>
+
 
 LV_FONT_DECLARE(font_awesome);
 
 static const char TAG[] = "UI";
 
-DryerUI::DryerUI() {
-    // 构造函数可留空
-}
+DryerUI::DryerUI() { }
 
 void DryerUI::slider_event_cb(lv_event_t *e)
 {
@@ -34,10 +36,10 @@ void DryerUI::slider_event_cb(lv_event_t *e)
     lv_obj_t *slider = (lv_obj_t *)lv_event_get_target(e);
     int raw_value = lv_slider_get_value(slider);
 
-    if (slider == ui->slider_target) {
+    if (slider == ui->slider_target_) {
         ui->target_temp = raw_value;
-        lv_label_set_text_fmt(ui->label_target_value, "%d°C", raw_value);
-    } else if (slider == ui->slider_duration) {
+        lv_label_set_text_fmt(ui->label_target_value_, "%d°C", raw_value);
+    } else if (slider == ui->slider_duration_) {
         const int step = 10;
         int last_value = ui->duration;
         int value = 0;
@@ -53,12 +55,47 @@ void DryerUI::slider_event_cb(lv_event_t *e)
             value = lv_slider_get_max_value(slider);
 
         ui->duration = value;
-        lv_label_set_text_fmt(ui->label_duration_value, "%d min", value);
+        lv_label_set_text_fmt(ui->label_duration_value_, "%d min", value);
         lv_slider_set_value(slider, value, LV_ANIM_OFF);
     }
 }
 
-void DryerUI::init() {
+void DryerUI::start_page() {
+    int y_pos = 0;
+    lv_obj_t *scr = lv_scr_act();
+
+    lvgl_port_lock(0);
+
+    // set background color
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0x101010), 0);
+
+    // sensor status
+    y_pos += 35;
+    label_sensors_ = lv_obj_create(scr);
+    lv_obj_set_style_text_color(label_sensors_, lv_color_hex(0x3498db), 0);
+    lv_label_set_text(label_sensors_, LV_SYMBOL_LIST "Init sensors...");
+    lv_obj_align(label_sensors_, LV_ALIGN_TOP_LEFT, 10, y_pos);
+
+
+    // connect to wifi
+    y_pos += 35;
+    label_wifi_ = lv_obj_create(scr);
+    lv_obj_set_style_text_color(label_wifi_, lv_color_hex(0x3498db), 0);
+    lv_label_set_text(label_wifi_, "");
+    lv_obj_align(label_wifi_, LV_ALIGN_TOP_LEFT, 10, y_pos);
+
+    // sync time
+    y_pos += 35;
+    label_sntp_ = lv_obj_create(scr);
+    lv_obj_set_style_text_color(label_sntp_, lv_color_hex(0x3498db), 0);
+    lv_label_set_text(label_sntp_, "");
+    lv_obj_align(label_sntp_, LV_ALIGN_TOP_LEFT, 10, y_pos);
+
+    lvgl_port_unlock();
+}
+
+
+void DryerUI::main_page() {
     int y_pos = 0;
     lv_obj_t *scr = lv_scr_act();
 
@@ -68,11 +105,11 @@ void DryerUI::init() {
 
     // 时间
     y_pos += 5;
-    label_time = lv_label_create(scr);
-    lv_label_set_text(label_time, "--:--");
-    lv_obj_set_style_text_color(label_time, lv_color_white(), 0);
-    lv_obj_set_style_text_font(label_time, &lv_font_montserrat_20, 0);
-    lv_obj_align(label_time, LV_ALIGN_TOP_MID, 0, y_pos);
+    label_time_ = lv_label_create(scr);
+    lv_label_set_text(label_time_, "--:--");
+    lv_obj_set_style_text_color(label_time_, lv_color_white(), 0);
+    lv_obj_set_style_text_font(label_time_, &lv_font_montserrat_20, 0);
+    lv_obj_align(label_time_, LV_ALIGN_TOP_MID, 0, y_pos);
 
     // 当前温度
     y_pos += 40;
@@ -82,9 +119,9 @@ void DryerUI::init() {
     lv_obj_set_style_text_color(icon_temp, lv_color_hex(0xc23616), 0);
     lv_obj_align(icon_temp, LV_ALIGN_TOP_LEFT, 10, y_pos);
 
-    label_temp = lv_label_create(scr);
-    lv_obj_set_style_text_color(label_temp, lv_color_hex(0xc23616), 0);
-    lv_obj_align_to(label_temp, icon_temp, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
+    label_temp_ = lv_label_create(scr);
+    lv_obj_set_style_text_color(label_temp_, lv_color_hex(0xc23616), 0);
+    lv_obj_align_to(label_temp_, icon_temp, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
     // 当前湿度
     lv_obj_t *icon_humi = lv_label_create(scr);
@@ -93,9 +130,9 @@ void DryerUI::init() {
     lv_obj_set_style_text_color(icon_humi, lv_color_hex(0x3498db), 0);
     lv_obj_align(icon_humi, LV_ALIGN_TOP_RIGHT, -85, y_pos);
 
-    label_humi = lv_label_create(scr);
-    lv_obj_set_style_text_color(label_humi, lv_color_hex(0x3498db), 0);
-    lv_obj_align_to(label_humi, icon_humi, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
+    label_humi_ = lv_label_create(scr);
+    lv_obj_set_style_text_color(label_humi_, lv_color_hex(0x3498db), 0);
+    lv_obj_align_to(label_humi_, icon_humi, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
     // 目标温度滑块
     y_pos += 55;
@@ -105,18 +142,18 @@ void DryerUI::init() {
     lv_obj_set_style_text_color(icon_target, lv_color_hex(0xc23616), 0);
     lv_obj_align(icon_target, LV_ALIGN_TOP_LEFT, 10, y_pos);
 
-    label_target_value = lv_label_create(scr);
-    lv_obj_set_style_text_color(label_target_value, lv_color_hex(0xc23616), 0);
-    lv_obj_align_to(label_target_value, icon_target,
+    label_target_value_ = lv_label_create(scr);
+    lv_obj_set_style_text_color(label_target_value_, lv_color_hex(0xc23616), 0);
+    lv_obj_align_to(label_target_value_, icon_target,
                     LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
     y_pos += 35;
-    slider_target = lv_slider_create(scr);
-    lv_slider_set_range(slider_target, MIN_HEAT_TEMP, MAX_HEAT_TEMP);
-    lv_slider_set_value(slider_target, target_temp, LV_ANIM_OFF);
-    lv_obj_set_size(slider_target, 200, 10);
-    lv_obj_align(slider_target, LV_ALIGN_TOP_LEFT, 10, y_pos);
-    lv_obj_add_event_cb(slider_target, slider_event_cb,
+    slider_target_ = lv_slider_create(scr);
+    lv_slider_set_range(slider_target_, MIN_HEAT_TEMP, MAX_HEAT_TEMP);
+    lv_slider_set_value(slider_target_, target_temp, LV_ANIM_OFF);
+    lv_obj_set_size(slider_target_, 200, 10);
+    lv_obj_align(slider_target_, LV_ALIGN_TOP_LEFT, 10, y_pos);
+    lv_obj_add_event_cb(slider_target_, slider_event_cb,
                         LV_EVENT_VALUE_CHANGED, this);
 
     // 加热时间滑块
@@ -127,24 +164,24 @@ void DryerUI::init() {
     lv_obj_set_style_text_color(icon_duration, lv_color_hex(0x44bd32), 0);
     lv_obj_align(icon_duration, LV_ALIGN_TOP_LEFT, 10, y_pos);
 
-    label_duration_value = lv_label_create(scr);
-    lv_obj_set_style_text_color(label_duration_value, lv_color_hex(0x44bd32), 0);
-    lv_obj_align_to(label_duration_value, icon_duration,
+    label_duration_value_ = lv_label_create(scr);
+    lv_obj_set_style_text_color(label_duration_value_, lv_color_hex(0x44bd32), 0);
+    lv_obj_align_to(label_duration_value_, icon_duration,
                     LV_ALIGN_OUT_RIGHT_MID, 10, 0);
 
     y_pos += 35;
-    slider_duration = lv_slider_create(scr);
-    lv_slider_set_range(slider_duration, MIN_HEAT_TIME_MINS, MAX_HEAT_TIME_MINS);
-    lv_slider_set_value(slider_duration, duration, LV_ANIM_OFF);
+    slider_duration_ = lv_slider_create(scr);
+    lv_slider_set_range(slider_duration_, MIN_HEAT_TIME_MINS, MAX_HEAT_TIME_MINS);
+    lv_slider_set_value(slider_duration_, duration, LV_ANIM_OFF);
     
-    lv_obj_set_size(slider_duration, 200, 10);
-    lv_obj_align(slider_duration, LV_ALIGN_TOP_LEFT, 10, y_pos);
-    lv_obj_add_event_cb(slider_duration, slider_event_cb,
+    lv_obj_set_size(slider_duration_, 200, 10);
+    lv_obj_align(slider_duration_, LV_ALIGN_TOP_LEFT, 10, y_pos);
+    lv_obj_add_event_cb(slider_duration_, slider_event_cb,
                         LV_EVENT_VALUE_CHANGED, this);
 
-    group = lv_group_create();
-    lv_group_add_obj(group, slider_target);
-    lv_group_add_obj(group, slider_duration);
+    indev_group_ = lv_group_create();
+    lv_group_add_obj(indev_group_, slider_target_);
+    lv_group_add_obj(indev_group_, slider_duration_);
 
     lvgl_port_unlock();
 
@@ -154,7 +191,34 @@ void DryerUI::init() {
 void DryerUI::bind_indev(lv_indev_t *indev)
 {
     lvgl_port_lock(0);
-    lv_indev_set_group(indev, group);
+    lv_indev_set_group(indev, indev_group_);
+    lvgl_port_unlock();
+}
+
+void DryerUI::update_label_wifi(const char *text)
+{
+    assert(label_wifi_ != NULL);
+
+    lvgl_port_lock(0);
+    lv_label_set_text(label_wifi_, text);
+    lvgl_port_unlock();
+}
+
+void DryerUI::update_label_sensors(const char *text)
+{
+    assert(label_sensors_ != NULL);
+
+    lvgl_port_lock(0);
+    lv_label_set_text(label_sensors_, text);
+    lvgl_port_unlock();
+}
+
+void DryerUI::update_label_sntp(const char *text)
+{
+    assert(label_sntp_ != NULL);
+
+    lvgl_port_lock(0);
+    lv_label_set_text(label_sntp_, text);
     lvgl_port_unlock();
 }
 
@@ -163,15 +227,15 @@ void DryerUI::update(float temp, int16_t humi)
     char buf[16] = {0};
 
     lvgl_port_lock(0);
-    lv_label_set_text_fmt(label_time, "18:32");
+    lv_label_set_text_fmt(label_time_, "18:32");
 
     snprintf(buf, sizeof(buf), "%.1f°C", temp);
-    lv_label_set_text(label_temp, buf);
+    lv_label_set_text(label_temp_, buf);
 
     snprintf(buf, sizeof(buf), "%d%%", humi);
-    lv_label_set_text(label_humi, buf);
+    lv_label_set_text(label_humi_, buf);
 
-    lv_label_set_text_fmt(label_target_value, "%d°C", target_temp);
-    lv_label_set_text_fmt(label_duration_value, "%d min", duration);
+    lv_label_set_text_fmt(label_target_value_, "%d°C", target_temp);
+    lv_label_set_text_fmt(label_duration_value_, "%d min", duration);
     lvgl_port_unlock();
 }
