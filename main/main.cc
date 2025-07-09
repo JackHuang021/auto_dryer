@@ -62,16 +62,17 @@ extern "C" void app_main(void)
     EventBits_t bits = xEventGroupWaitBits(wifi.wifi_event_group_,
                                            WIFI_CONNECTED | SMARTCONFIG_START,
                                            true, false, pdMS_TO_TICKS(20000));
-    if (bits & WIFI_CONNECTED)
+    if (bits & WIFI_CONNECTED) {
         dryer.ui_.update_start_page(SETUP_WIFI, true);
+        synctime.sync();
+    }
     else
         dryer.ui_.update_start_page(SETUP_WIFI, false);
 
     if (bits & SMARTCONFIG_START)
         dryer.ui_.update_start_page(SETUP_SMARTCONFIG, true);
 
-    synctime.get_local_time();
-    dryer.ui_.update_start_page(SETUP_TIME, true);
     vTaskDelay(pdMS_TO_TICKS(1000));
     dryer.ui_.main_page();
+    dryer.ui_.bind_indev(Dryer::indev_);
 }

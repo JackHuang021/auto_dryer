@@ -71,21 +71,21 @@ void DryerUI::start_page() {
 
     // sensor status
     y_pos += 35;
-    label_sensors_ = lv_obj_create(scr);
+    label_sensors_ = lv_label_create(scr);
     lv_obj_set_style_text_color(label_sensors_, lv_color_hex(0x3498db), 0);
     lv_label_set_text(label_sensors_, LV_SYMBOL_LIST "Init sensors...");
     lv_obj_align(label_sensors_, LV_ALIGN_TOP_LEFT, 10, y_pos);
 
     // connect to wifi
     y_pos += 35;
-    label_wifi_ = lv_obj_create(scr);
+    label_wifi_ = lv_label_create(scr);
     lv_obj_set_style_text_color(label_wifi_, lv_color_hex(0x3498db), 0);
     lv_label_set_text(label_wifi_, "");
     lv_obj_align(label_wifi_, LV_ALIGN_TOP_LEFT, 10, y_pos);
 
     // sync time
     y_pos += 35;
-    label_sntp_ = lv_obj_create(scr);
+    label_sntp_ = lv_label_create(scr);
     lv_obj_set_style_text_color(label_sntp_, lv_color_hex(0x3498db), 0);
     lv_label_set_text(label_sntp_, "");
     lv_obj_align(label_sntp_, LV_ALIGN_TOP_LEFT, 10, y_pos);
