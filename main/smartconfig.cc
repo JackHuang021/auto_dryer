@@ -20,10 +20,7 @@
 #include "smartconfig.h"
 
 
-
-static const int CONNECTED_BIT = BIT0;
-static const int ESPTOUCH_DONE_BIT = BIT1;
-static const char *tag = "smartconfig";
+static const char *tag = "wifi";
 static bool smartconfig_run = false;
 
 static esp_err_t save_wifi_credentials(const char *ssid, const char *password)
@@ -97,7 +94,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
             esp_wifi_connect();
-            xEventGroupClearBits(wifi->wifi_event_group_, CONNECTED_BIT);
+            xEventGroupClearBits(wifi->wifi_event_group_, WIFI_CONNECTED);
             break;
         default:
             break;
@@ -106,7 +103,8 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
     if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
-        xEventGroupSetBits(wifi->wifi_event_group_, CONNECTED_BIT);
+        xEventGroupSetBits(wifi->wifi_event_group_, WIFI_CONNECTED);
+        xEventGroupClearBits(wifi->wifi_event_group_, WIFI_CONNECTING);
     }
 
     if (event_base ==  SC_EVENT) {
@@ -148,7 +146,8 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         }
 
         case SC_EVENT_SEND_ACK_DONE:
-            xEventGroupSetBits(wifi->wifi_event_group_, ESPTOUCH_DONE_BIT);
+            xEventGroupClearBits(wifi->wifi_event_group_, SMARTCONFIG_START);
+            xEventGroupSetBits(wifi->wifi_event_group_, SMARTCONFIG_END);
             break;
 
         default:
@@ -167,10 +166,14 @@ static void smartconfig_task(void *param)
     while (1) {
         if (startup) {
             ESP_LOGI(tag, "wait 20S to connect wifi");
-            bits = xEventGroupWaitBits(wifi->wifi_event_group_, CONNECTED_BIT,
+            bits = xEventGroupWaitBits(wifi->wifi_event_group_, WIFI_CONNECTED,
                                             pdFALSE, pdFALSE, pdMS_TO_TICKS(20000));
-            if (!(bits & CONNECTED_BIT))
+            if (!(bits & WIFI_CONNECTED)) {
+                xEventGroupClearBits(wifi->wifi_event_group_,
+                                     WIFI_CONNECTING | WIFI_CONNECTED);
+                xEventGroupSetBits(wifi->wifi_event_group_, SMARTCONFIG_START);
                 smartconfig_run = true;
+            }
             startup = false;
         }
 
@@ -180,15 +183,11 @@ static void smartconfig_task(void *param)
             esp_event_handler_register(SC_EVENT, ESP_EVENT_ANY_ID, &event_handler, wifi);
             esp_smartconfig_start(&config);
             // 等待wifi连接
-            bits = xEventGroupWaitBits(wifi->wifi_event_group_, 
-                                        CONNECTED_BIT | ESPTOUCH_DONE_BIT,
+            bits = xEventGroupWaitBits(wifi->wifi_event_group_, WIFI_CONNECTED,
                                         true, false, portMAX_DELAY);
-            if(bits & CONNECTED_BIT) {
+            if(bits & WIFI_CONNECTED) {
+                xEventGroupSetBits(wifi->wifi_event_group_, WIFI_CONNECTED);
                 ESP_LOGI(tag, "WiFi Connected to ap");
-            }
-            if(bits & ESPTOUCH_DONE_BIT) {
-                ESP_LOGI(tag, "smartconfig over");
-                esp_smartconfig_stop();
             }
             smartconfig_run = false;
         }
@@ -224,6 +223,7 @@ esp_err_t WiFiConnect::init(void)
         memcpy(config.sta.password, password, sizeof(config.sta.password));
         esp_wifi_set_config(WIFI_IF_STA, &config);
         esp_wifi_connect();
+        xEventGroupSetBits(wifi_event_group_, WIFI_CONNECTING);
     }
 
     xTaskCreate(smartconfig_task, "smartconfig_task", 4096, this, 3, NULL);

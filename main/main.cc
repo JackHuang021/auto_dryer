@@ -9,6 +9,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
 #include "esp_system.h"
@@ -58,8 +59,19 @@ extern "C" void app_main(void)
 
     dryer.init();
     wifi.init();
-    // xEventGroupWaitBits(IP_EVENT,  , true, false, portMAX_DELAY);
+    EventBits_t bits = xEventGroupWaitBits(wifi.wifi_event_group_,
+                                           WIFI_CONNECTED | SMARTCONFIG_START,
+                                           true, false, pdMS_TO_TICKS(20000));
+    if (bits & WIFI_CONNECTED)
+        dryer.ui_.update_start_page(SETUP_WIFI, true);
+    else
+        dryer.ui_.update_start_page(SETUP_WIFI, false);
 
+    if (bits & SMARTCONFIG_START)
+        dryer.ui_.update_start_page(SETUP_SMARTCONFIG, true);
 
     synctime.get_local_time();
+    dryer.ui_.update_start_page(SETUP_TIME, true);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    dryer.ui_.main_page();
 }

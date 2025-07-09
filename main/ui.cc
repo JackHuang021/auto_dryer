@@ -76,7 +76,6 @@ void DryerUI::start_page() {
     lv_label_set_text(label_sensors_, LV_SYMBOL_LIST "Init sensors...");
     lv_obj_align(label_sensors_, LV_ALIGN_TOP_LEFT, 10, y_pos);
 
-
     // connect to wifi
     y_pos += 35;
     label_wifi_ = lv_obj_create(scr);
@@ -98,6 +97,8 @@ void DryerUI::start_page() {
 
 void DryerUI::update_start_page(setup_step step, bool done)
 {
+    lvgl_port_lock(0);
+
     switch (step) {
     case SETUP_SENSORS:
         if (done) {
@@ -144,6 +145,8 @@ void DryerUI::update_start_page(setup_step step, bool done)
         ESP_LOGE(TAG, "not such setup step");
         break;
     }
+
+    lvgl_port_unlock();
 }
 
 
@@ -153,7 +156,7 @@ void DryerUI::main_page()
     lv_obj_t *scr = lv_scr_act();
 
     lvgl_port_lock(0);
-
+    lv_obj_clean(scr);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x101010), 0);
 
     // 时间
@@ -249,9 +252,12 @@ void DryerUI::bind_indev(lv_indev_t *indev)
     lvgl_port_unlock();
 }
 
-void DryerUI::update(float temp, int16_t humi)
+void DryerUI::update_main_page(float temp, int16_t humi)
 {
     char buf[16] = {0};
+
+    if (current_page_ != MAIN_PAGE)
+        return;
 
     lvgl_port_lock(0);
     lv_label_set_text_fmt(label_time_, "18:32");

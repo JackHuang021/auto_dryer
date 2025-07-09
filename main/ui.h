@@ -57,7 +57,7 @@ public:
     DryerUI();
     void start_page();
     void main_page();
-    void update(float temp, int16_t humi);
+    void update_main_page(float temp, int16_t humi);
     void bind_indev(lv_indev_t *indev);
 
     int get_target_temp() const { return target_temp; }

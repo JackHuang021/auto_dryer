@@ -177,7 +177,7 @@ static void ui_update_task(void *args)
     Dryer *dryer = static_cast<Dryer *>(args);
 
     while (1) {
-        Dryer::ui_.update(dryer->temp_, dryer->humi_);
+        Dryer::ui_.update_main_page(dryer->temp_, dryer->humi_);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }

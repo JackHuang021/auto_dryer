@@ -16,7 +16,8 @@ extern "C" {
 enum wifi_state {
     WIFI_CONNECTING = BIT0,
     WIFI_CONNECTED = BIT1,
-    SMARTCONIG = BIT2,
+    SMARTCONFIG_START = BIT2,
+    SMARTCONFIG_END = BIT3,
 };
 
 class WiFiConnect {
