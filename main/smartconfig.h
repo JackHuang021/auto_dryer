@@ -4,13 +4,31 @@
 
 #pragma once
 
+#include <stdio.h>
+
+#include "esp_err.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void init_wifi(void);
+enum wifi_state {
+    WIFI_CONNECTING = BIT0,
+    WIFI_CONNECTED = BIT1,
+    SMARTCONIG = BIT2,
+};
+
+class WiFiConnect {
+public:
+    EventGroupHandle_t wifi_event_group_;
+
+public:
+    esp_err_t init();
+};
+
 
 #ifdef __cplusplus
 }
 #endif
+

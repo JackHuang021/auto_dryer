@@ -18,6 +18,19 @@
 extern "C" {
 #endif
 
+enum setup_step {
+    SETUP_SENSORS,
+    SETUP_WIFI,
+    SETUP_SMARTCONFIG,
+    SETUP_TIME,
+};
+
+enum ui_page {
+    START_PAGE,
+    MAIN_PAGE,
+    PAGE_NUMS,
+};
+
 class DryerUI {
 private:
     lv_obj_t *label_sensors_ = NULL;
@@ -35,6 +48,7 @@ private:
 
     int target_temp = 40;
     int duration = 10;
+    ui_page current_page_ = START_PAGE;
 
 private:
     static void slider_event_cb(lv_event_t *e);
@@ -45,13 +59,11 @@ public:
     void main_page();
     void update(float temp, int16_t humi);
     void bind_indev(lv_indev_t *indev);
-    void update_label_wifi(const char *text);
-    void update_label_sensors(const char *text);
-    void update_label_sntp(const char *text);
-
 
     int get_target_temp() const { return target_temp; }
     int get_duration() const { return duration; }
+
+    void update_start_page(setup_step step, bool status);
 };
 
 #ifdef __cplusplus

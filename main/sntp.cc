@@ -41,9 +41,12 @@ esp_err_t SyncTime::get_local_time(void)
 
 esp_err_t SyncTime::sync(void)
 {
+    esp_err_t ret = ESP_OK;
     esp_sntp_config_t sntp_config = ESP_NETIF_SNTP_DEFAULT_CONFIG(SNTP_SERVER);
 
     sntp_config.sync_cb = time_sync_cb;
     esp_netif_sntp_init(&sntp_config);
+
+    return ret;
 }
 

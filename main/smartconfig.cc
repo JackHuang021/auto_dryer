@@ -19,7 +19,7 @@
 #include "esp_mac.h"
 #include "smartconfig.h"
 
-static EventGroupHandle_t wifi_event_group = NULL;
+
 
 static const int CONNECTED_BIT = BIT0;
 static const int ESPTOUCH_DONE_BIT = BIT1;
@@ -89,13 +89,15 @@ static bool read_wifi_credentials(char *ssid, char *password)
 static void event_handler(void *arg, esp_event_base_t event_base,
                           int32_t event_id, void *event_data)
 {
+    WiFiConnect *wifi = static_cast<WiFiConnect *>(arg);
+
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
         case WIFI_EVENT_STA_START:
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
             esp_wifi_connect();
-            xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+            xEventGroupClearBits(wifi->wifi_event_group_, CONNECTED_BIT);
             break;
         default:
             break;
@@ -104,7 +106,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
     if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
-        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+        xEventGroupSetBits(wifi->wifi_event_group_, CONNECTED_BIT);
     }
 
     if (event_base ==  SC_EVENT) {
@@ -112,15 +114,17 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         case SC_EVENT_SCAN_DONE:
             ESP_LOGI(tag, "Scan done");
             break;
+
         case SC_EVENT_FOUND_CHANNEL:
             ESP_LOGI(tag, "Found channel");
             break;
-        case SC_EVENT_GOT_SSID_PSWD:
+
+        case SC_EVENT_GOT_SSID_PSWD: {
             ESP_LOGI(tag, "got SSID and password");
             smartconfig_event_got_ssid_pswd_t *event = (smartconfig_event_got_ssid_pswd_t *)event_data;
             wifi_config_t wifi_config;
-            char ssid[MAX_SSID_LEN] = {0};
-            char password[MAX_PASSPHRASE_LEN] = {0};
+            char ssid[MAX_SSID_LEN] = {};
+            char password[MAX_PASSPHRASE_LEN] = {};
 
             bzero(&wifi_config, sizeof(wifi_config));
             memcpy(wifi_config.sta.ssid, event->ssid, sizeof(wifi_config.sta.ssid));
@@ -128,7 +132,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
             wifi_config.sta.bssid_set = event->bssid_set;
             if (wifi_config.sta.bssid_set) {
-                ESP_LOGI(tag, "set mac address target of AP: "MACSTR"", MAC2STR(event->bssid));
+                ESP_LOGI(tag, "set mac address target of AP: " MACSTR, MAC2STR(event->bssid));
                 memcpy(wifi_config.sta.bssid, event->bssid, sizeof(wifi_config.sta.bssid));
             }
 
@@ -141,9 +145,12 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
             esp_wifi_connect();
             break;
+        }
+
         case SC_EVENT_SEND_ACK_DONE:
-            xEventGroupSetBits(wifi_event_group, ESPTOUCH_DONE_BIT);
+            xEventGroupSetBits(wifi->wifi_event_group_, ESPTOUCH_DONE_BIT);
             break;
+
         default:
             break;
         }
@@ -155,11 +162,12 @@ static void smartconfig_task(void *param)
 {
     EventBits_t bits;
     static bool startup = true;
+    WiFiConnect *wifi = static_cast<WiFiConnect *>(param);
 
     while (1) {
         if (startup) {
             ESP_LOGI(tag, "wait 20S to connect wifi");
-            bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
+            bits = xEventGroupWaitBits(wifi->wifi_event_group_, CONNECTED_BIT,
                                             pdFALSE, pdFALSE, pdMS_TO_TICKS(20000));
             if (!(bits & CONNECTED_BIT))
                 smartconfig_run = true;
@@ -169,10 +177,10 @@ static void smartconfig_task(void *param)
         if (smartconfig_run) {
             smartconfig_start_config_t config = SMARTCONFIG_START_CONFIG_DEFAULT();
             esp_smartconfig_set_type(SC_TYPE_ESPTOUCH);
-            esp_event_handler_register(SC_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL);
+            esp_event_handler_register(SC_EVENT, ESP_EVENT_ANY_ID, &event_handler, wifi);
             esp_smartconfig_start(&config);
             // 等待wifi连接
-            bits = xEventGroupWaitBits(wifi_event_group, 
+            bits = xEventGroupWaitBits(wifi->wifi_event_group_, 
                                         CONNECTED_BIT | ESPTOUCH_DONE_BIT,
                                         true, false, portMAX_DELAY);
             if(bits & CONNECTED_BIT) {
@@ -189,19 +197,20 @@ static void smartconfig_task(void *param)
     }
 }
 
-void init_wifi(void)
+esp_err_t WiFiConnect::init(void)
 {
     char ssid[MAX_SSID_LEN] = {0};
     char password[MAX_PASSPHRASE_LEN] = {0};
+
     esp_netif_create_default_wifi_sta();
     wifi_init_config_t wifi_config = WIFI_INIT_CONFIG_DEFAULT();
 
     ESP_ERROR_CHECK(esp_netif_init());
-    wifi_event_group = xEventGroupCreate();
+    wifi_event_group_ = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_wifi_init(&wifi_config));
 
-    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL);
-    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL);
+    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, this);
+    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, this);
     esp_wifi_set_mode(WIFI_MODE_STA);
     esp_wifi_start();
     esp_err_t ret = esp_wifi_set_inactive_time(WIFI_IF_STA, 30);
@@ -217,6 +226,8 @@ void init_wifi(void)
         esp_wifi_connect();
     }
 
-    xTaskCreate(smartconfig_task, "smartconfig_task", 4096, NULL, 3, NULL);
+    xTaskCreate(smartconfig_task, "smartconfig_task", 4096, this, 3, NULL);
     ESP_LOGI(tag, "start smartconfig and wait wifi connect");
+
+    return ret ;
 }

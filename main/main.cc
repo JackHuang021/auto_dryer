@@ -19,6 +19,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
+#include "esp_netif_types.h"
 
 #include "config.h"
 #include "bsp_aht20.h"
@@ -38,6 +39,7 @@ static const char *TAG = "main";
 
 static Dryer dryer;
 static SyncTime synctime;
+static WiFiConnect wifi;
 
 extern "C" void app_main(void)
 {
@@ -54,7 +56,10 @@ extern "C" void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    init_wifi();
     dryer.init();
+    wifi.init();
+    // xEventGroupWaitBits(IP_EVENT,  , true, false, portMAX_DELAY);
+
+
     synctime.get_local_time();
 }

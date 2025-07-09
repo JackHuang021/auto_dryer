@@ -92,10 +92,63 @@ void DryerUI::start_page() {
     lv_obj_align(label_sntp_, LV_ALIGN_TOP_LEFT, 10, y_pos);
 
     lvgl_port_unlock();
+
+    current_page_ = START_PAGE;
+}
+
+void DryerUI::update_start_page(setup_step step, bool done)
+{
+    switch (step) {
+    case SETUP_SENSORS:
+        if (done) {
+            lv_label_set_text(label_sensors_, LV_SYMBOL_LIST "Init sensors OK...");
+            lv_label_set_text(label_wifi_, "Connecting WiFi...");
+            lv_label_set_text(label_sntp_, "");
+        } else {
+            lv_obj_set_style_text_color(label_sensors_, lv_color_hex(0x3498db), 0);
+            lv_label_set_text(label_sensors_, LV_SYMBOL_CLOSE "Init sensors failed!");
+            lv_label_set_text(label_wifi_, "");
+            lv_label_set_text(label_sntp_, "");
+        }
+        break;
+
+    case SETUP_WIFI:
+        if (done) {
+            lv_obj_set_style_text_color(label_wifi_, lv_color_hex(0x3498db), 0);
+            lv_label_set_text(label_wifi_, LV_SYMBOL_WIFI "WiFi Connected...");
+            lv_label_set_text(label_sntp_, LV_SYMBOL_REFRESH "Sync time...");
+        } else {
+            lv_obj_set_style_text_color(label_wifi_, lv_color_hex(0xc23616), 0);
+            lv_label_set_text(label_wifi_, LV_SYMBOL_WARNING "Connect WiFi failed...");
+            lv_label_set_text(label_sntp_, "");
+        }
+        break;
+
+    case SETUP_SMARTCONFIG:
+        lv_obj_set_style_text_color(label_wifi_, lv_color_hex(0x3498db), 0);
+        lv_label_set_text(label_wifi_, LV_SYMBOL_WIFI "Start SmartConfig...");
+        lv_label_set_text(label_sntp_, "");
+        break;
+
+    case SETUP_TIME:
+        if (done) {
+            lv_obj_set_style_text_color(label_sntp_, lv_color_hex(0x3498db), 0);
+            lv_label_set_text(label_sntp_, LV_SYMBOL_OK "Time synced");
+        } else {
+            lv_obj_set_style_text_color(label_sntp_, lv_color_hex(0xc23616), 0);
+            lv_label_set_text(label_sntp_, LV_SYMBOL_WARNING "Time sync failed!");
+        }
+        break;
+
+    default:
+        ESP_LOGE(TAG, "not such setup step");
+        break;
+    }
 }
 
 
-void DryerUI::main_page() {
+void DryerUI::main_page()
+{
     int y_pos = 0;
     lv_obj_t *scr = lv_scr_act();
 
@@ -185,6 +238,7 @@ void DryerUI::main_page() {
 
     lvgl_port_unlock();
 
+    current_page_ = MAIN_PAGE;
     ESP_LOGI(TAG, "ui init done");
 }
 
@@ -192,33 +246,6 @@ void DryerUI::bind_indev(lv_indev_t *indev)
 {
     lvgl_port_lock(0);
     lv_indev_set_group(indev, indev_group_);
-    lvgl_port_unlock();
-}
-
-void DryerUI::update_label_wifi(const char *text)
-{
-    assert(label_wifi_ != NULL);
-
-    lvgl_port_lock(0);
-    lv_label_set_text(label_wifi_, text);
-    lvgl_port_unlock();
-}
-
-void DryerUI::update_label_sensors(const char *text)
-{
-    assert(label_sensors_ != NULL);
-
-    lvgl_port_lock(0);
-    lv_label_set_text(label_sensors_, text);
-    lvgl_port_unlock();
-}
-
-void DryerUI::update_label_sntp(const char *text)
-{
-    assert(label_sntp_ != NULL);
-
-    lvgl_port_lock(0);
-    lv_label_set_text(label_sntp_, text);
     lvgl_port_unlock();
 }
 

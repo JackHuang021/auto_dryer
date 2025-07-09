@@ -221,16 +221,18 @@ esp_err_t Dryer::init(void)
     ret = ec11_init();
     ret = lvgl_indev_init();
 
-    if (ESP_OK == ret)
-        Dryer::ui_.update_label_sensors(LV_SYMBOL_LIST "init sensors ok...");
-    else
-        Dryer::ui_.update_label_sensors(LV_SYMBOL_CLOSE "init sensors failed...");
-
-
     Dryer::ptc_pwm_.setupPWM(LEDC_TIMER_1, 200, LEDC_TIMER_13_BIT,
                              LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1,
                              0, PTC_GPIO);
     Dryer::ptc_pwm_.setDuty(0);
+
+    if (ESP_OK == ret)
+        Dryer::ui_.update_start_page(SETUP_SENSORS, true);
+    else {
+        Dryer::ui_.update_start_page(SETUP_SENSORS, false);
+        ESP_LOGE(TAG, "init sensors failed, exit");
+        return ret;
+    }
 
     Dryer::buz_.Play({{800, 200, 0.01f}, {500, 200, 0.01f}});
 
